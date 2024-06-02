@@ -1,0 +1,17 @@
+server:
+  port: 8000
+spring:
+  application:
+    name: short-link-gateway
+  profiles:
+#    active: aggregation
+     active: dev
+  data:
+    redis:
+      host: 172.17.206.17
+      port: 6379
+      password: 1234
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848

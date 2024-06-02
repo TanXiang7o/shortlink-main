@@ -1,0 +1,38 @@
+server:
+  port: 8004
+
+spring:
+  application:
+    name: short-link-shop
+  datasource:
+    driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
+    url: jdbc:shardingsphere:classpath:shardingsphere-config-${database.env:dev}.yaml
+  data:
+    redis:
+      host: 172.17.206.17
+      port: 6379
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+
+short-link:
+  domain:
+    default: kubernetes.docker.internal:8004
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath:mapper/*.xml
+
+rocketmq:
+  name-server: 172.17.206.17:9876
+  producer:
+    endpoints: 172.17.206.17:8081
+    topic: shortlink
+    max-attempts: 5
+  simple-consumer:
+    tag: TAGA
+    endpoints: 172.17.206.17:8081
+    consumer-group: shortlinkShopConsumer
+    topic: shortlinkShop

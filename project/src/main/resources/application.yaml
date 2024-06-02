@@ -1,0 +1,63 @@
+server:
+  port: 8001
+
+spring:
+  application:
+    name: short-link-project
+  datasource:
+    driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
+    url: jdbc:shardingsphere:classpath:shardingsphere-config-${database.env:dev}.yaml
+  data:
+    redis:
+      host: 172.17.206.17
+      port: 6379
+
+  mvc:
+    view:
+      prefix: /templates/
+      suffix: .html
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+
+short-link:
+  domain:
+    default: kubernetes.docker.internal:8001
+  stats:
+#    queue: redisStream
+    queue: rocketmq
+    locale:
+      amap-key: a7cc23d1d76830996618a1f1937fd565
+  goto-domain:
+    white-list:
+      enable: true
+      names: '拿个offer,知乎,掘金,博客园'
+      details:
+        - nageoffer.com
+        - zhihu.com
+        - juejin.cn
+        - cnblogs.com
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath:mapper/*.xml
+rocketmq:
+  name-server: 172.17.206.17:9876
+  producer:
+    endpoints: 172.17.206.17:8081
+    topic: shortlink
+    max-attempts: 5
+  simple-consumer:
+    tag: TAGA
+    endpoints: 172.17.206.17:8081
+    consumer-group: shortlinkConsumer
+    topic: shortlink
+
+management:
+  endpoints:
+    enabled-by-default: true
+    web:
+      exposure:
+        include: info,health,beans
