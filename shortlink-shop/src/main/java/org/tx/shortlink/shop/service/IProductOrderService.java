@@ -1,8 +1,11 @@
 package org.tx.shortlink.shop.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
+import org.tx.shortlink.shop.DTO.req.OrderQuery;
+import org.tx.shortlink.shop.DTO.req.OrderStatusReqDTO;
+import org.tx.shortlink.shop.DTO.resp.PageDTO;
 import org.tx.shortlink.shop.DTO.resp.ProductOrderRespDTO;
 import org.tx.shortlink.shop.entity.ProductOrderDO;
-import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
 
@@ -16,7 +19,13 @@ import java.util.List;
  */
 public interface IProductOrderService extends IService<ProductOrderDO> {
 
-    ProductOrderRespDTO getByTradeNo(String tradeNo);
+    boolean create(ProductOrderDO productOrderDO);
+
+    ProductOrderRespDTO getByTradeNo(String tradeNo, Long userId);
 
     List<ProductOrderRespDTO> getByUserId(Long userId);
+
+    Boolean updateStatus(OrderStatusReqDTO orderStatusReqDTO);
+
+    PageDTO<ProductOrderRespDTO> queryOrdersPage(OrderQuery query);
 }

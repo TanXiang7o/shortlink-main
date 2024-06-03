@@ -3,6 +3,9 @@ package org.tx.shortlink.shop.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.tx.shortlink.shop.DTO.req.OrderQuery;
+import org.tx.shortlink.shop.DTO.req.OrderStatusReqDTO;
+import org.tx.shortlink.shop.DTO.resp.PageDTO;
 import org.tx.shortlink.shop.DTO.resp.ProductOrderRespDTO;
 import org.tx.shortlink.shop.common.convention.result.Result;
 import org.tx.shortlink.shop.common.convention.result.Results;
@@ -34,14 +37,30 @@ public class ProductOrderController {
         }
     }
 
-    @GetMapping("/detail/{tradeNo}")
-    public Result<ProductOrderRespDTO> getByTradeNo(@PathVariable String tradeNo){
-        return Results.success(productOrderService.getByTradeNo(tradeNo));
+    @GetMapping("/detail/trade")
+    public Result<ProductOrderRespDTO> getByTradeNo(String tradeNo, Long userId){
+        return Results.success(productOrderService.getByTradeNo(tradeNo,userId));
     }
 
     @GetMapping("/list")
     public Result<List<ProductOrderRespDTO>> getByUserId(@RequestParam Long userId){
         return Results.success(productOrderService.getByUserId(userId));
     }
+
+    @PutMapping("/order/update")
+    public Result<Void> updateStatus(@RequestBody OrderStatusReqDTO orderStatusReqDTO){
+        Boolean updateStatus = productOrderService.updateStatus(orderStatusReqDTO);
+        if (updateStatus){
+            return Results.success();
+        }else{
+            return Results.failure();
+        }
+    }
+
+    @GetMapping("/order/page")
+    public Result<PageDTO<ProductOrderRespDTO>> queryOrdersPage(OrderQuery query){
+        return Results.success(productOrderService.queryOrdersPage(query));
+    }
+
 
 }

@@ -15,14 +15,10 @@ rules:
           standard:
             shardingColumn: user_id
             shardingAlgorithmName: product_order_table_hash_mod
-    bindingTables:
-      - t_product_order
     shardingAlgorithms:
       product_order_table_hash_mod:
         type: HASH_MOD
         props:
           sharding-count: 16
-
-
 props:
   sql-show: true
