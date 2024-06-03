@@ -1,0 +1,20 @@
+package org.tx.shortlink.shop.common.enums;
+
+public enum OrderStatusEnum {
+    NEW,
+    PAYING,
+    PAY_SUCCESS,
+    PAY_FAIL,
+    PAY_TIMEOUT,
+    CANCEL,
+    REFUND,
+    REFUND_SUCCESS,
+    REFUND_FAIL,
+    REFUND_TIMEOUT,
+    REFUND_CANCEL,
+    REFUND_CANCEL_SUCCESS,
+    REFUND_CANCEL_FAIL,
+    REFUND_CANCEL_TIMEOUT,
+    REFUND_CANCEL_CANCEL,
+    REFUND_CANCEL_CANCEL_SUCCESS,
+}

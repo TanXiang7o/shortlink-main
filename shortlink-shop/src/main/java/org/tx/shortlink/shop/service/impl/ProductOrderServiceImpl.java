@@ -1,21 +1,26 @@
 package org.tx.shortlink.shop.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.lang.UUID;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.tx.shortlink.shop.DTO.req.OrderQuery;
 import org.tx.shortlink.shop.DTO.req.OrderStatusReqDTO;
 import org.tx.shortlink.shop.DTO.resp.PageDTO;
 import org.tx.shortlink.shop.DTO.resp.ProductOrderRespDTO;
+import org.tx.shortlink.shop.common.constant.RedisKeyConstant;
 import org.tx.shortlink.shop.entity.ProductOrderDO;
 import org.tx.shortlink.shop.mapper.ProductOrderMapper;
 import org.tx.shortlink.shop.service.IProductOrderService;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -26,8 +31,10 @@ import java.util.List;
  * @since 2024-06-02
  */
 @Service
+@RequiredArgsConstructor
 public class ProductOrderServiceImpl extends ServiceImpl<ProductOrderMapper, ProductOrderDO> implements IProductOrderService {
 
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     public boolean create(ProductOrderDO productOrderDO) {
@@ -87,5 +94,11 @@ public class ProductOrderServiceImpl extends ServiceImpl<ProductOrderMapper, Pro
         return new PageDTO<ProductOrderRespDTO>(page.getTotal(),page.getPages(),productOrderRespDTOS);
     }
 
-
+    @Override
+    public String getToken(Long userId) {
+        String token = UUID.randomUUID().toString();
+        String key = String.format(RedisKeyConstant.SUBMIT_ORDER_TOKEN_KEY,userId,token);
+        stringRedisTemplate.opsForValue().set(key, String.valueOf(Thread.currentThread().getId()),30, TimeUnit.MINUTES);
+        return token;
+    }
 }

@@ -28,4 +28,6 @@ public interface IProductOrderService extends IService<ProductOrderDO> {
     Boolean updateStatus(OrderStatusReqDTO orderStatusReqDTO);
 
     PageDTO<ProductOrderRespDTO> queryOrdersPage(OrderQuery query);
+
+    String getToken(Long userId);
 }

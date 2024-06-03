@@ -5,9 +5,10 @@ import lombok.Data;
 @Data
 public class PageQuery {
 
-    private Long pageNo;
 
-    private Long pageSize;
+    private Long pageNo = 1L;
+
+    private Long pageSize = 10L;
 
     private String orderBy;
 
