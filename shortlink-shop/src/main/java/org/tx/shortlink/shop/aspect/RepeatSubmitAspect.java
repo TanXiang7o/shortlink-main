@@ -26,7 +26,6 @@ public class RepeatSubmitAspect {
     private final StringRedisTemplate stringRedisTemplate;
     @Pointcut("@annotation(repeatSubmit)")
     public void pointCutRepeatSubmit(RepeatSubmit repeatSubmit){
-
     }
 
     @Around(value = "pointCutRepeatSubmit(repeatSubmit)", argNames = "joinPoint,repeatSubmit")
@@ -43,7 +42,6 @@ public class RepeatSubmitAspect {
                 throw new RuntimeException("提交订单token为空");
             }
             String key = String.format(RedisKeyConstant.SUBMIT_ORDER_TOKEN_KEY,request.getHeader("userId"),token);
-
             res = Boolean.TRUE.equals(stringRedisTemplate.delete(key));
         }
         if (!res){

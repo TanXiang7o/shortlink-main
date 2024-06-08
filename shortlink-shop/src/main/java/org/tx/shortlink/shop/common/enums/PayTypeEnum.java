@@ -5,8 +5,8 @@ public enum PayTypeEnum {
     WECHAT("WECHAT", "微信"),
     ;
 
-    private String code;
-    private String desc;
+    private final String code;
+    private final String desc;
 
     PayTypeEnum(String code, String desc) {
         this.code = code;

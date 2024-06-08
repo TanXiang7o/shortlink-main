@@ -2,6 +2,7 @@ package org.tx.shortlink.shop.controller;
 
 
 import cn.hutool.json.JSONUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.tx.shortlink.shop.DTO.req.ConfirmOrderReqDTO;
@@ -21,6 +22,7 @@ import org.tx.shortlink.shop.entity.ProductOrderDO;
 import org.tx.shortlink.shop.service.IProductOrderService;
 import org.tx.shortlink.shop.service.IProductService;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -33,6 +35,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/product-order")
+@Slf4j
 public class ProductOrderController {
     @Autowired
     private IProductOrderService productOrderService;
@@ -42,11 +45,19 @@ public class ProductOrderController {
     private SnowflakeDistributeId snowflakeDistributeId;
 
     @PostMapping("/create")
-    public Result<Void> create(@RequestBody ConfirmOrderReqDTO confirmOrderReqDTO){
+    public Result<String> create(@RequestBody ConfirmOrderReqDTO confirmOrderReqDTO){
         //防重提交
         ProductDO productDO = productService.getById(confirmOrderReqDTO.getProductId());
         String tradeNo = String.valueOf(snowflakeDistributeId.nextId());
         //获取最新的价格，验证价格
+        //后端计算价格
+        BigDecimal bizTotal = BigDecimal.valueOf(confirmOrderReqDTO.getBuyNum()).multiply(productDO.getAmount());
+
+        //前端传递总价和后端计算总价格是否一致, 如果有优惠券，也在这里进行计算
+        if( bizTotal.compareTo(confirmOrderReqDTO.getPayAmount()) !=0 ){
+            log.error("验证价格失败{}",confirmOrderReqDTO);
+            throw new RuntimeException("验证订单价格失败");
+        }
         //创建订单
         ProductOrderDO productOrderDO = ProductOrderDO.builder()
                 .productId(confirmOrderReqDTO.getProductId())
@@ -60,7 +71,7 @@ public class ProductOrderController {
                 .payAmount(confirmOrderReqDTO.getPayAmount())
                 .totalAmount(confirmOrderReqDTO.getTotalAmount())
                 .payType(PayTypeEnum.ALIPAY.getCode())
-                .billType(BillTypeEnum.valueOf(confirmOrderReqDTO.getBillType()).name())
+                .billType(BillTypeEnum.NO_BILL.getCode())
                 .billHeader(confirmOrderReqDTO.getBillHeader())
                 .billReceiverPhone(confirmOrderReqDTO.getBillReceiverPhone())
                 .billReceiverEmail(confirmOrderReqDTO.getBillReceiverEmail())
@@ -68,15 +79,7 @@ public class ProductOrderController {
                 .build();
 
         boolean saved = productOrderService.save(productOrderDO);
-
-        if (saved){
-            //创建支付对象
-            //调用支付消息
-            return Results.success();
-        }
-        else{
-            return Results.failure();
-        }
+        return Results.success(tradeNo);
     }
 
     @GetMapping("/token")

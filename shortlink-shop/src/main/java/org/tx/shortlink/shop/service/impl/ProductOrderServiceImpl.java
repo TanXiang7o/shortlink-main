@@ -52,6 +52,8 @@ public class ProductOrderServiceImpl extends ServiceImpl<ProductOrderMapper, Pro
         return productOrderRespDTO;
     }
 
+
+
     /**
      * 根据用户id查询订单
      */
@@ -70,8 +72,13 @@ public class ProductOrderServiceImpl extends ServiceImpl<ProductOrderMapper, Pro
      */
     @Override
     public Boolean updateStatus(OrderStatusReqDTO orderStatusReqDTO) {
-        return lambdaUpdate().eq(ProductOrderDO::getUserId,orderStatusReqDTO.getUserId()).eq(ProductOrderDO::getTradeNo, orderStatusReqDTO.getTradeNo()).eq(ProductOrderDO::getState, orderStatusReqDTO.getOldState())
-                .set(ProductOrderDO::getState, orderStatusReqDTO.getNewState()).update();
+        return lambdaUpdate().eq(ProductOrderDO::getUserId,orderStatusReqDTO.getUserId())
+                .eq(ProductOrderDO::getTradeNo, orderStatusReqDTO.getTradeNo())
+                .eq(ProductOrderDO::getState, orderStatusReqDTO.getOldState())
+                .set(ProductOrderDO::getState, orderStatusReqDTO.getNewState())
+                .set(orderStatusReqDTO.getPayNo()!=null,ProductOrderDO::getPayNo, orderStatusReqDTO.getPayNo())
+                .set(orderStatusReqDTO.getPayTime()!=null,ProductOrderDO::getPayTime, orderStatusReqDTO.getPayTime())
+                .update();
     }
 
 
