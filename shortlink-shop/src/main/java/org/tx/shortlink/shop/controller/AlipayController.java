@@ -58,7 +58,7 @@ public class AlipayController {
     private static Long userId;
     @GetMapping("/pay")
     public void pay(Long userId,String tradeNo, HttpServletResponse httpServletResponse) throws IOException, AlipayApiException {
-        //通过tradeNo查看订单是否超时或是支付失败 trade_closed,如果支付失败就更新状态为关闭
+        //TODO 通过tradeNo查看订单是否超时或是支付失败 trade_closed,如果支付失败就更新状态为关闭
         AlipayController.userId = userId;
         ProductOrderRespDTO productOrderRespDTO = productOrderService.getByTradeNo(tradeNo, userId);
         //更新支付状态
@@ -105,7 +105,7 @@ public class AlipayController {
     @PostMapping("/notify")
     public void notify(HttpServletRequest request) throws AlipayApiException {
         if(request.getParameter("trade_status").equals("TRADE_SUCCESS")){
-            System.out.println("====支付宝支付回调");
+            log.info("====支付宝支付回调");
             HashMap<String, String> params = new HashMap<>();
             Map<String, String[]> requestParams = request.getParameterMap();
             for (String name : requestParams.keySet()){
@@ -115,12 +115,19 @@ public class AlipayController {
             String content = AlipaySignature.getSignCheckContentV1(params);
             boolean checkSignature = AlipaySignature.rsa256CheckContent(content, sign, alipayPublicKey, "UTF-8");
             if (checkSignature){
-                System.out.println("交易名称："+params.get("subject"));
-                System.out.println("交易状态："+params.get("trade_status"));
-                System.out.println("支付宝交易号："+params.get("trade_no"));
-                System.out.println("付款金额："+params.get("total_amount"));
-                System.out.printf("商户订单号："+params.get("out_trade_no"));
-                System.out.printf("付款时间："+params.get("gmt_payment"));
+                log.info("交易名称："+params.get("subject"));
+                log.info("交易状态："+params.get("trade_status"));
+                log.info("支付宝交易号："+params.get("trade_no"));
+                log.info("付款金额："+params.get("total_amount"));
+                log.info("商户订单号："+params.get("out_trade_no"));
+                log.info("付款时间："+params.get("gmt_payment"));
+
+                ProductOrderRespDTO productOrderRespDTO = productOrderService.getByTradeNo(params.get("out_trade_no"), userId);
+                if (productOrderRespDTO.getState().equals(OrderStatusEnum.PAY_TIMEOUT.name())){
+                    log.info("订单支付超时");
+                    //TODO 更新状态为REFUND，走退款逻辑
+                    return;
+                }
 
                 OrderStatusReqDTO orderStatusReqDTO = new OrderStatusReqDTO();
                 orderStatusReqDTO.setNewState(OrderStatusEnum.PAY_SUCCESS.name());
@@ -179,4 +186,15 @@ public class AlipayController {
         alipayConfig.setSignType(SIGN_TYPE);
         return alipayConfig;
     }
+
+    /**
+     * TODO 处理支付结果
+     *
+     */
+    @GetMapping("/result")
+    public void result(){
+
+    }
+
+
 }

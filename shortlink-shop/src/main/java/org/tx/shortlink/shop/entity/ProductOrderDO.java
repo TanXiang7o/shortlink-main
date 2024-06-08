@@ -108,6 +108,11 @@ public class ProductOrderDO implements Serializable {
     private LocalDateTime gmtCreate;
 
     /**
+     * 状态锁
+     */
+    private String stateLock;
+
+    /**
      * 发票类型:0->不开发票;1->电子发票;2->纸质发票
      */
     private String billType;

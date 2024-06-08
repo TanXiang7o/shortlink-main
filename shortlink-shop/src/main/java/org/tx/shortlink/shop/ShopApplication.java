@@ -22,6 +22,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * 短链接应用
@@ -31,6 +32,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableDiscoveryClient
 @EnableAsync
 @MapperScan("org.tx.shortlink.shop.mapper")
+@EnableTransactionManagement
 public class ShopApplication {
 
     public static void main(String[] args) {
