@@ -104,6 +104,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 }
                 userRegisterCachePenetrationBloomFilter.add(requestParam.getUsername());
                 groupService.saveGroup(requestParam.getUsername(), "默认分组");
+                //TODO 消息发放免费资源包
                 return;
             }
             throw new ClientException(USER_NAME_EXIST);

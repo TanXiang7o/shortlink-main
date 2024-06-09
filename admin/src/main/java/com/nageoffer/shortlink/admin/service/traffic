@@ -1,0 +1,13 @@
+资源包采用惰性更新策略
+新建一个 资源日表 （id，user_id，today_all_times，today_remain_times,gmt_modified,Last_expiration_time）
+1. 用户每天第一次使用，检查到gmt_modified不是今天，则查询并检查所有该用户的流量包是否过期，同时更新资源日表中today_all_times,today_remain_times,Last_expiration_time
+2. 用户每次使用，检查到gmt_modified是今天，且Last_expiration_time在当前时间之后，则不需要查询所有的流量包，直接更新资源日表中today_remain_times
+3. 用户每次使用，检查到gmt_modified是今天，且Last_expiration_time在当前时间之前，则查询并检查所有该用户的流量包是否过期，同时更新资源日表中today_all_times,today_remain_times,Last_expiration_time
+
+存入redis 预扣减，时间为12过期或者最近过期资源包的过期时间
+
+
+
+通过服务自管理 解决分布式事务问题
+TrafficTask表，存储扣减库存的任务
+使用rocketmq延迟消息或者定时任务，检查超时未完成任务，并检查短链是否存在，不存在则需恢复流量包

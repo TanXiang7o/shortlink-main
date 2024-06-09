@@ -137,6 +137,7 @@ public class AlipayController {
                 orderStatusReqDTO.setPayNo(params.get("trade_no"));
                 orderStatusReqDTO.setPayTime(LocalDateTime.parse(params.get("gmt_payment")));
                 productOrderService.updateStatus(orderStatusReqDTO);
+                //TODO 发送消息，创建资源包
             }
         }
         //其它结果无异步通知
