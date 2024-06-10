@@ -5,7 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.tx.shortlink.shop.common.config.GetBeanUtils;
 import org.tx.shortlink.shop.common.enums.OrderStatusEnum;
@@ -17,10 +19,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 @Component
 public class OrderJob {
@@ -73,7 +71,7 @@ public class OrderJob {
             String sql = "select * from t_product_order_" + i + " where state_lock = '0'";
             String updateSql = "update t_product_order_" + i + " set state_lock = ?, state = ? where id = ?";
             List<ProductOrderDO> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(ProductOrderDO.class));
-            ArrayList<ProductOrderDO> listToUpdate = new ArrayList<>(1000);
+            ArrayList<ProductOrderDO> listToUpdate = new ArrayList<>();
             for (ProductOrderDO productOrderDO:list){
                 if (productOrderDO.getState().equals("NEW") || productOrderDO.getState().equals("PAYING")){
                     if (productOrderDO.getGmtCreate().isBefore(now.minusMinutes(1))){
@@ -104,32 +102,29 @@ public class OrderJob {
      * 批量结合异步
      */
     @XxlJob("TimeoutOrderJobHandler3")
-    @Transactional(rollbackFor = Exception.class)
     public void TimeoutOrderJobHandler3(){
         logger.info("TimeoutOrderJobHandler3");
         JdbcTemplate jdbcTemplate = GetBeanUtils.getBean(JdbcTemplate.class);
         LocalDateTime now = LocalDateTime.now();
         long start = System.currentTimeMillis();
-        List<CompletableFuture<Void>> futures = IntStream.range(0, 16)
-                .mapToObj(i -> CompletableFuture.runAsync(() -> processSingleTable(i, now,jdbcTemplate), new ThreadPoolExecutor(
-                        16, 16, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(),
-                        (r, executor) -> logger.error("Task rejected: " + r.toString())
-                )))
-                .toList();
-
+        CompletableFuture<?>[] futures = new CompletableFuture[16];
+        for (int i = 0; i < 16; i++) {
+            String sql = "select * from t_product_order_" + i + " where state_lock = '0'";
+            String updateSql = "update t_product_order_" + i + " set state_lock = ?, state = ? where id = ?";
+            CompletableFuture<String> future = GetBeanUtils.getBean(OrderJob.class).processSingleTable(sql, updateSql, now, jdbcTemplate);
+            futures[i] = future;
+        }
         // 等待所有任务完成
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        CompletableFuture.allOf(futures).join();
         long end = System.currentTimeMillis();
         logger.info("TimeoutOrderJobHandler3 耗时：{}", end-start);
     }
 
-    public void processSingleTable(int index, LocalDateTime now, JdbcTemplate jdbcTemplate) {
-        String sql = "select * from t_product_order_" + index + " where state_lock = '0'";
-        String updateSql = "update t_product_order_" + index + " set state_lock = ?, state = ? where id = ?";
-
+    @Async
+    @Transactional(rollbackFor = Exception.class,propagation = Propagation.REQUIRES_NEW)
+    public CompletableFuture<String> processSingleTable(String sql,String updateSql, LocalDateTime now, JdbcTemplate jdbcTemplate) {
         List<ProductOrderDO> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(ProductOrderDO.class));
-        ArrayList<ProductOrderDO> listToUpdate = new ArrayList<>(1000);
-
+        ArrayList<ProductOrderDO> listToUpdate = new ArrayList<>();
         for (ProductOrderDO productOrderDO:list){
             if (productOrderDO.getState().equals("NEW") || productOrderDO.getState().equals("PAYING")){
                 if (productOrderDO.getGmtCreate().isBefore(now.minusMinutes(1))){
@@ -145,12 +140,15 @@ public class OrderJob {
                 listToUpdate.add(productOrderDO);
             }
         }
-
         jdbcTemplate.batchUpdate(updateSql, listToUpdate, listToUpdate.size(),
                 (ps, argument) -> {
                     ps.setString(1, argument.getStateLock());
                     ps.setString(2, argument.getState());
                     ps.setLong(3, argument.getId());
                 });
+//        if (i == 10){
+//            throw new RuntimeException("测试事务生效");
+//        }
+        return CompletableFuture.completedFuture("success");
     }
 }
