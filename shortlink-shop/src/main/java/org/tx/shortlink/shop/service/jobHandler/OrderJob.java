@@ -44,7 +44,7 @@ public class OrderJob {
                     //订单状态为NEW或PAYING且已经超时，更新状态锁，更新状态为PAY_TIMEOUT，关闭支付渠道
                     productOrderDO.setStateLock(now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                     productOrderDO.setState(OrderStatusEnum.PAY_TIMEOUT.name());
-                    //TODO 关闭支付
+                    //TODO 发送关闭支付消息
                 }//未超时不用修改
             }else {
                 //订单状态为其它，更新状态锁
@@ -79,7 +79,7 @@ public class OrderJob {
                         productOrderDO.setStateLock(now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                         productOrderDO.setState(OrderStatusEnum.PAY_TIMEOUT.name());
                         listToUpdate.add(productOrderDO);
-                        //TODO 关闭支付
+                        //TODO 发送关闭支付消息
                     }//未超时不用修改
                 }else {
                     //订单状态为其它，更新状态锁
@@ -132,7 +132,7 @@ public class OrderJob {
                     productOrderDO.setStateLock(now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                     productOrderDO.setState(OrderStatusEnum.PAY_TIMEOUT.name());
                     listToUpdate.add(productOrderDO);
-                    //TODO 关闭支付
+                    //TODO 发送关闭支付消息
                 }//未超时不用修改
             }else {
                 //订单状态为其它，更新状态锁

@@ -11,7 +11,6 @@ spring:
     redis:
       host: 172.17.206.17
       port: 6379
-      password: 1234
   cloud:
     nacos:
       discovery:
@@ -24,3 +23,16 @@ short-link:
     enable: true
     time-window: 1
     max-access-count: 20
+
+
+rocketmq:
+  name-server: 172.17.206.17:9876
+  producer:
+    endpoints: 172.17.206.17:8081
+    topic: UserTopic
+    max-attempts: 5
+  simple-consumer:
+    tag: FreeTraffic
+    endpoints: 172.17.206.17:8081
+    consumer-group: FreeTrafficConsumer
+    topic: UserTopic

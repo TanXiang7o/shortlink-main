@@ -196,6 +196,4 @@ public class AlipayController {
     public void result(){
 
     }
-
-
 }
