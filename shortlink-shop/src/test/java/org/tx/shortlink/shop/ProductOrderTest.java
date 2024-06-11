@@ -30,7 +30,7 @@ public class ProductOrderTest {
     public void testcreateBatch(){
         ProductDO productDO = productService.getById(2L);
         List<ProductOrderDO> list = new ArrayList<>(100);
-        for (long i = 3001; i <= 4000; i++){
+        for (long i = 31001; i <= 40000; i++){
             ProductOrderDO productOrderDO = ProductOrderDO.builder()
                     .tradeNo(String.valueOf(snowflakeDistributeId.nextId()))
                     .buyNum(1)
@@ -80,6 +80,5 @@ public class ProductOrderTest {
                 .billReceiverPhone(String.format("xxx%dxxx",userId))
                 .build();
         productOrderService.save(productOrderDO);
-
     }
 }

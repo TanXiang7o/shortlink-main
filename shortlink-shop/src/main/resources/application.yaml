@@ -29,13 +29,14 @@ rocketmq:
   name-server: 172.17.206.17:9876
   producer:
     endpoints: 172.17.206.17:8081
-    topic: ResourceShop
+    topic: resourceShop
     max-attempts: 5
   simple-consumer:
     tag: TAGB
     endpoints: 172.17.206.17:8081
     consumer-group: ResourceShopConsumer
-    topic: ResourceShop
+    topic: resourceShop
+
 
 
 logging:
@@ -47,7 +48,7 @@ xxl:
       addresses: http://172.17.206.17:8087/xxl-job-admin
     executor:
       address: ''
-      appname: xxl-job-executor-sample
+      appname: xxl-job-executor-shop
       ip: ''
       logpath: D:\work\java\xxl-job-2.4.1\xxl-job-executor-samples\xxl-job-executor-sample-springboot\src\main\resources\jobHandlerlogs
       logretentiondays: 30
