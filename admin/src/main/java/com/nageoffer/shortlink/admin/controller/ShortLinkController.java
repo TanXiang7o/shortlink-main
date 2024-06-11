@@ -78,7 +78,7 @@ public class ShortLinkController {
         }
         //检查是否有过期资源包
         if (userTodayTrafficDO.getNextExpirationTime()!=null &&  userTodayTrafficDO.getNextExpirationTime().isBefore(LocalDateTime.now())){
-            redoTodayTraffic(userTodayTrafficDO);
+            redoTodayTrafficExpire(userTodayTrafficDO);
         }
         if (userTodayTrafficDO.getTodayRemainTimes() <= 0){
             return Results.failure("无资源创建短链接次数");
@@ -106,6 +106,31 @@ public class ShortLinkController {
         }
         userTodayTrafficDO.setTodayAllTimes(allTimes)
                 .setTodayRemainTimes(allTimes)
+                .setNextExpirationTime(nextExpireTime)
+                .setGmtModified(null);
+        userTodayTrafficService.lambdaUpdate().eq(UserTodayTrafficDO::getUsername, UserContext.getUsername()).update(userTodayTrafficDO);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void redoTodayTrafficExpire(UserTodayTrafficDO userTodayTrafficDO) {
+        long haveUsedTimes = userTodayTrafficDO.getTodayAllTimes() - userTodayTrafficDO.getTodayRemainTimes();
+        List<TrafficDO> list = trafficService.lambdaQuery().eq(TrafficDO::getUsername, UserContext.getUsername()).list();
+        long allTimes = 0;
+        LocalDateTime nextExpireTime = LocalDateTime.MAX;
+        for(TrafficDO trafficDO : list){
+            if (trafficDO.getExpireDate() != null && trafficDO.getExpireDate().isBefore(LocalDateTime.now())){
+                continue;
+            }
+            allTimes += trafficDO.getDayLimit();
+            if (trafficDO.getExpireDate() != null && nextExpireTime.isAfter(trafficDO.getExpireDate())){
+                nextExpireTime = trafficDO.getExpireDate();
+            }
+        }
+        if (nextExpireTime == LocalDateTime.MAX) {
+            nextExpireTime = null;
+        }
+        userTodayTrafficDO.setTodayAllTimes(allTimes)
+                .setTodayRemainTimes(allTimes-haveUsedTimes)
                 .setNextExpirationTime(nextExpireTime)
                 .setGmtModified(null);
         userTodayTrafficService.lambdaUpdate().eq(UserTodayTrafficDO::getUsername, UserContext.getUsername()).update(userTodayTrafficDO);
