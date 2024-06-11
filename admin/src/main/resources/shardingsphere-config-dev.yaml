@@ -27,6 +27,12 @@ rules:
           standard:
             shardingColumn: username
             shardingAlgorithmName: traffic_table_hash_mod
+      t_user_today_traffic:
+        actualDataNodes: ds_0.t_user_today_traffic_${0..15}
+        tableStrategy:
+          standard:
+            shardingColumn: username
+            shardingAlgorithmName: traffic_today_table_hash_mod
     shardingAlgorithms:
       user_table_hash_mod:
         type: HASH_MOD
@@ -37,6 +43,10 @@ rules:
         props:
           sharding-count: 16
       traffic_table_hash_mod:
+        type: HASH_MOD
+        props:
+          sharding-count: 16
+      traffic_today_table_hash_mod:
         type: HASH_MOD
         props:
           sharding-count: 16

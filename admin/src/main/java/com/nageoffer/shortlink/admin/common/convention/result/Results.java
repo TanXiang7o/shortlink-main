@@ -54,6 +54,8 @@ public final class Results {
                 .setMessage(BaseErrorCode.SERVICE_ERROR.message());
     }
 
+
+
     /**
      * 通过 {@link AbstractException} 构建失败响应
      */
@@ -73,6 +75,11 @@ public final class Results {
     public static Result<Void> failure(String errorCode, String errorMessage) {
         return new Result<Void>()
                 .setCode(errorCode)
+                .setMessage(errorMessage);
+    }
+
+    public static <T> Result<T> failure(String errorMessage) {
+        return new Result<T>()
                 .setMessage(errorMessage);
     }
 }

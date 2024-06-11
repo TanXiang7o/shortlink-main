@@ -18,8 +18,11 @@
 package com.nageoffer.shortlink.admin.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.nageoffer.shortlink.admin.common.biz.user.UserContext;
 import com.nageoffer.shortlink.admin.common.convention.result.Result;
 import com.nageoffer.shortlink.admin.common.convention.result.Results;
+import com.nageoffer.shortlink.admin.dao.entity.TrafficDO;
+import com.nageoffer.shortlink.admin.dao.entity.UserTodayTrafficDO;
 import com.nageoffer.shortlink.admin.remote.ShortLinkActualRemoteService;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkBatchCreateReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
@@ -29,15 +32,20 @@ import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkBaseInfoRespDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkBatchCreateRespDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
+import com.nageoffer.shortlink.admin.service.ITrafficService;
+import com.nageoffer.shortlink.admin.service.IUserTodayTrafficService;
 import com.nageoffer.shortlink.admin.toolkit.EasyExcelWebUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -50,12 +58,83 @@ public class ShortLinkController {
 
     private final ShortLinkActualRemoteService shortLinkActualRemoteService;
 
+    private final IUserTodayTrafficService userTodayTrafficService;
+
+    private final ITrafficService trafficService;
+
     /**
      * 创建短链接
      */
     @PostMapping("/api/short-link/admin/v1/create")
+    @Transactional(rollbackFor = Exception.class)
     public Result<ShortLinkCreateRespDTO> createShortLink(@RequestBody ShortLinkCreateReqDTO requestParam) {
+        //验证是否有资源次数
+        UserTodayTrafficDO userTodayTrafficDO = userTodayTrafficService.getByUsername();
+        if (userTodayTrafficDO == null){
+            userTodayTrafficDO = redoTodayTraffic();
+        } else if (!userTodayTrafficDO.getGmtModified().toLocalDate().equals(LocalDate.now())){
+            //是今天第一次使用
+            redoTodayTraffic(userTodayTrafficDO);
+        }
+        //检查是否有过期资源包
+        if (userTodayTrafficDO.getNextExpirationTime()!=null &&  userTodayTrafficDO.getNextExpirationTime().isBefore(LocalDateTime.now())){
+            redoTodayTraffic(userTodayTrafficDO);
+        }
+        if (userTodayTrafficDO.getTodayRemainTimes() <= 0){
+            return Results.failure("无资源创建短链接次数");
+        }
+        userTodayTrafficDO.setTodayRemainTimes(userTodayTrafficDO.getTodayRemainTimes() - 1).setGmtModified(null);
+        userTodayTrafficService.lambdaUpdate().eq(UserTodayTrafficDO::getUsername, UserContext.getUsername()).update(userTodayTrafficDO);
         return shortLinkActualRemoteService.createShortLink(requestParam);
+    }
+    @Transactional(rollbackFor = Exception.class)
+    public void redoTodayTraffic(UserTodayTrafficDO userTodayTrafficDO) {
+        List<TrafficDO> list = trafficService.lambdaQuery().eq(TrafficDO::getUsername, UserContext.getUsername()).list();
+        long allTimes = 0;
+        LocalDateTime nextExpireTime = LocalDateTime.MAX;
+        for(TrafficDO trafficDO : list){
+            if (trafficDO.getExpireDate() != null && trafficDO.getExpireDate().isBefore(LocalDateTime.now())){
+                continue;
+            }
+            allTimes += trafficDO.getDayLimit();
+            if (trafficDO.getExpireDate() != null && nextExpireTime.isAfter(trafficDO.getExpireDate())){
+                nextExpireTime = trafficDO.getExpireDate();
+            }
+        }
+        if (nextExpireTime == LocalDateTime.MAX) {
+            nextExpireTime = null;
+        }
+        userTodayTrafficDO.setTodayAllTimes(allTimes)
+                .setTodayRemainTimes(allTimes)
+                .setNextExpirationTime(nextExpireTime)
+                .setGmtModified(null);
+        userTodayTrafficService.lambdaUpdate().eq(UserTodayTrafficDO::getUsername, UserContext.getUsername()).update(userTodayTrafficDO);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public UserTodayTrafficDO redoTodayTraffic() {
+        UserTodayTrafficDO userTodayTrafficDO = new UserTodayTrafficDO();
+        List<TrafficDO> list = trafficService.lambdaQuery().eq(TrafficDO::getUsername, UserContext.getUsername()).list();
+        long allTimes = 0;
+        LocalDateTime nextExpireTime = LocalDateTime.MAX;
+        for(TrafficDO trafficDO : list){
+            if (trafficDO.getExpireDate() != null && trafficDO.getExpireDate().isBefore(LocalDateTime.now())){
+                continue;
+            }
+            allTimes += trafficDO.getDayLimit();
+            if (trafficDO.getExpireDate() != null && nextExpireTime.isAfter(trafficDO.getExpireDate())){
+                nextExpireTime = trafficDO.getExpireDate();
+            }
+        }
+        if (nextExpireTime == LocalDateTime.MAX) {
+            nextExpireTime = null;
+        }
+        userTodayTrafficDO.setTodayAllTimes(allTimes)
+                .setTodayRemainTimes(allTimes)
+                .setNextExpirationTime(nextExpireTime)
+                .setUsername(UserContext.getUsername());
+        userTodayTrafficService.save(userTodayTrafficDO);
+        return userTodayTrafficDO;
     }
 
     /**
